@@ -238,11 +238,11 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
     The procedure takes the following input variables: 
     - `TBL_QUERY`: the name of the table in which your address/POI data is stored
-    - `TBL_MAPPING`: the name of the column mapping table
-    - `TBL_OUT`: the name of the table to write the results 
-    - `TBL_TEMP`: the name of the temporary table required by the procedure
-    - `API_FUNCTION`: the name of the External Function we defined earlier
-    - `BATCH_SIZE`: number of rows to call in each iteration (the function limits the maximum to 1,000)
+    - `TBL_MAPPING`: the name of the column mapping table defined earlier
+    - `TBL_OUT`: the name of the table to store the results 
+    - `TBL_TEMP`: the name of the temporary table used in the procedure
+    - `API_FUNCTION`: the name of the External Function defined earlier
+    - `BATCH_SIZE`: number of rows to call in each iteration of the internal loop (maximum 1,000)
     
 - The procedure can be called like follows:
     
@@ -250,7 +250,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
     Call APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 1000);
     ```
     
-    As configured, the above code will store all of the fields in your original table as well as the Placekeys and any associated errors in a temporary table called `payload`. There is no requirement that you supply a unique ID since this is handled by the procedure.
+    The above procedure will store all of the fields in your original table along with two additional columns - placekey and error - in a temporary table called `payload`. There is no requirement that you supply a unique ID since this is handled by the procedure.
     
     
 ### Summary and Code
