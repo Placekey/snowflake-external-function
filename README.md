@@ -255,11 +255,11 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
 ### Summary and Code
 
-To test out this functionality, simply copy and paste the below code block into a blank Snowflake worksheet, replace `<PASTE_YOUR_KEY_HERE>` with your API key, and run all.
+To test out this functionality, simply copy and paste the below code block into a blank Snowflake worksheet, replace `<PASTE_YOUR_DB_HERE>` with the database you would like to use, replace `<PASTE_YOUR_KEY_HERE>` with your API key, check the box next to `All Queries` (or select all), and click `Run`.
 
 ```
 USE ROLE ACCOUNTADMIN;
-USE DEMO_DB;
+USE <PASTE_YOUR_DB_HERE>;
 
 
 CREATE OR REPLACE API INTEGRATION placekey_api_integration
