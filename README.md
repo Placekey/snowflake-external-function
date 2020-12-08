@@ -20,9 +20,9 @@ The Snowflake External Function allows you to append Placekeys to your address a
     ```
     CREATE OR REPLACE API INTEGRATION placekey_api_integration
       API_PROVIDER = aws_api_gateway
-      API_AWS_ROLE_ARN = 'arn:aws:iam::931043480326:role/safegraph-dev'
+      API_AWS_ROLE_ARN = 'arn:aws:iam::886725170148:role/placekey-lambda-production'
       ENABLED = true
-      API_ALLOWED_PREFIXES = ('https://0mrxv21awk.execute-api.us-east-1.amazonaws.com/api/')
+      API_ALLOWED_PREFIXES = ('https://2oxy8d2hh1.execute-api.us-east-1.amazonaws.com/api/')
     ;
     ```
     Here, please be sure to use the `api_aws_role_arn` and `api_allowed_prefixes` in the code block above.
@@ -45,7 +45,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
       API_INTEGRATION = placekey_api_integration
       HEADERS = ('api-key' = '<PASTE_YOUR_KEY_HERE>')
       MAX_BATCH_ROWS = 1000
-      AS 'https://0mrxv21awk.execute-api.us-east-1.amazonaws.com/api/placekeys'
+      AS 'https://2oxy8d2hh1.execute-api.us-east-1.amazonaws.com/api/placekeys'
     ;
     ```
     Enter your Placekey API key into `headers = ('api-key': '<PASTE_YOUR_KEY_HERE>')`. If you don't have a Placekey API key, get one for free at [placekey.io](https://dev.placekey.io/default/register).
@@ -266,7 +266,7 @@ CREATE OR REPLACE API INTEGRATION placekey_api_integration
   API_PROVIDER = aws_api_gateway
   API_AWS_ROLE_ARN = 'arn:aws:iam::931043480326:role/safegraph-dev'
   ENABLED = true
-  API_ALLOWED_PREFIXES = ('https://0mrxv21awk.execute-api.us-east-1.amazonaws.com/api/')
+  API_ALLOWED_PREFIXES = ('https://2oxy8d2hh1.execute-api.us-east-1.amazonaws.com/api/')
 ;
 
 
@@ -285,7 +285,7 @@ CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
   API_INTEGRATION = placekey_api_integration
   HEADERS = ('api-key' = '<PASTE_YOUR_KEY_HERE>')
   MAX_BATCH_ROWS = 1000
-  AS 'https://0mrxv21awk.execute-api.us-east-1.amazonaws.com/api/placekeys'
+  AS 'https://2oxy8d2hh1.execute-api.us-east-1.amazonaws.com/api/placekeys'
 ;
 
 
