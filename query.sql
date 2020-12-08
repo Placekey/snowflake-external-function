@@ -19,9 +19,9 @@ USE DEMO_DB;
 
 CREATE OR REPLACE API INTEGRATION placekey_api_integration
   API_PROVIDER = aws_api_gateway
-  API_AWS_ROLE_ARN = 'arn:aws:iam::931043480326:role/safegraph-production'
+  API_AWS_ROLE_ARN = 'arn:aws:lambda:us-east-1:886725170148:function:placekey-lambda-production'
   ENABLED = true
-  API_ALLOWED_PREFIXES = ('https://pgm2xg825k.execute-api.us-east-1.amazonaws.com/api/')
+  API_ALLOWED_PREFIXES = ('https://2oxy8dhh1.execute-api.us-east-1.amazonaws.com/api/')
 ;
 
 
@@ -42,7 +42,7 @@ CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
   API_INTEGRATION = placekey_api_integration
   HEADERS = ('api-key' = '<PASTE_YOUR_KEY_HERE>')
   MAX_BATCH_ROWS = 1000
-  AS 'https://pgm2xg825k.execute-api.us-east-1.amazonaws.com/api/placekeys'
+  AS 'https://2oxy8dhh1.execute-api.us-east-1.amazonaws.com/api/placekeys'
 ;
 
 
