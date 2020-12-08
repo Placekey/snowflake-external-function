@@ -50,9 +50,9 @@ The Snowflake External Function allows you to append Placekeys to your address a
     ```
     Enter your Placekey API key into `headers = ('api-key': '<PASTE_YOUR_KEY_HERE>')`. If you don't have a Placekey API key, get one for free at [placekey.io](https://dev.placekey.io/default/register).
 
-### Using the External Function for Simple Queries
+### Using the External Function Directly
 
-- Create some sample address and POI data:
+- Create some sample address and point-of-interest data:
 
     ```
     CREATE OR REPLACE TABLE test_addresses (
@@ -88,13 +88,23 @@ The Snowflake External Function allows you to append Placekeys to your address a
     ```
     
     Note that the above requires the following:
-    - The table needs to have a unique ID column which is passed as the first argument to the external function
-    - The order of the fields in the `SELECT` statement should exactly match that of the external function definition
-    - There are at most 1,000 rows in the table to which you want to append Placekeys
+    - The table needs to have a unique column `id` which is passed as the first argument to the external function. The function returns the id which was originally passed to it along with the Placekeys, so the result can be joined back to the original table. The `id` field cannot be `null`.
+    - The order of the fields in the `SELECT` statement should exactly match that of the external function definition: `(id, location_name, street_address, city, region, postal_code, latitude, longitude, country)`.
+    - There are at most 1,000 rows in the table to which you want to append Placekeys. To perform queries for >1000 Placekeys, see the procedure below.
+
+    The function can be used as follows to query only a limited number of fields. For example, if test_addresses only had the fields `STREETADDRESS`, `CITY`, and `STATE`, the function could be called as follows:
     
-### Using the External Function with Dynamic Column Mapping and Bulk Queries
+    ```
+    SELECT get_placekeys(joined.*) AS result
+    FROM (
+      SELECT ID, null AS missing_name, STREETADDRESS, CITY, STATE, null AS missing_zip, null AS no_lat, null AS no_lon, null AS defaults_to_us
+      FROM test_addresses
+    ) AS joined;
+    ```
     
-- To perform dynamic column mapping and bulk queries (more than 1,000 rows), create a table to map the column names in your table to the Placekey API fields:
+### Using the External Function Within a Procedure
+    
+- To query Placekeys for more than 1,000 rows,  use a precedure. Create a table to map the column names in your table to the Placekey API fields:
     
     ```
     CREATE OR REPLACE TABLE test_lookup (
@@ -264,7 +274,7 @@ USE <PASTE_YOUR_DB_HERE>;
 
 CREATE OR REPLACE API INTEGRATION placekey_api_integration
   API_PROVIDER = aws_api_gateway
-  API_AWS_ROLE_ARN = 'arn:aws:iam::931043480326:role/safegraph-dev'
+  API_AWS_ROLE_ARN = 'arn:aws:iam::931043480326:role/safegraph-production'
   ENABLED = true
   API_ALLOWED_PREFIXES = ('https://2oxy8d2hh1.execute-api.us-east-1.amazonaws.com/api/')
 ;
