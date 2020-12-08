@@ -274,7 +274,7 @@ USE <PASTE_YOUR_DB_HERE>;
 
 CREATE OR REPLACE API INTEGRATION placekey_api_integration
   API_PROVIDER = aws_api_gateway
-  API_AWS_ROLE_ARN = 'arn:aws:iam::931043480326:role/safegraph-production'
+  API_AWS_ROLE_ARN = 'arn:aws:iam::886725170148:role/placekey-lambda-production'
   ENABLED = true
   API_ALLOWED_PREFIXES = ('https://2oxy8d2hh1.execute-api.us-east-1.amazonaws.com/api/')
 ;
