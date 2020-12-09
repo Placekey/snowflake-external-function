@@ -125,12 +125,12 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
     Note that the table `test_lookup` has column headers which match all of the Placekey API fields (`street_address`, `city`, `region`, `postal_code`, `location_name`, `latitude`, `longitude`, and `iso_country_code`) and the first and only row has the names of the fields defined in `test_addresses` above. 
     
-    It is not necessary to define all of the Placekey API fields - for example, if the data in your table only contains `street_address`, `region`, and `postal_code` (a legal query), you would instead have inserted the following into `test_lookup`:
+    It is not necessary to define all of the Placekey API fields - for example, if the data in your table only contains fields which match `street_address`, `city` `region`, and `postal_code`, you would instead have inserted the following into `test_lookup`:
     
     ```
     INSERT INTO test_lookup
     VALUES
-    (null, 'street_address', null, 'region', 'postal_code', null, null, null, null);
+    ('STREETADDRESS', 'CITY', 'STATE', 'ZIPCODE', null, null, null, null);
     ```
     
 - Use the following procedure to perform bulk queries:
