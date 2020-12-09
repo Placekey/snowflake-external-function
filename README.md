@@ -257,7 +257,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
 - The procedure can be called like follows:
     
     ```
-    Call APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 1000);
+    CALL APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 1000);
     ```
     
     The above procedure will store all of the fields in your original table along with two additional columns - placekey and error - in a temporary table called `payload`. There is no requirement that you supply a unique ID since this is handled by the procedure.
@@ -448,7 +448,7 @@ AS $$
 $$
 ;
 
-Call APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 2);
+CALL APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 2);
 
 SELECT * FROM payload;
 ```
