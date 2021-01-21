@@ -25,7 +25,8 @@ AS $$
       var result_map = stmt_map.execute();
       result_map.next();
       
-      c_id = result_map.getColumnValue("ID");
+      // PRIMARY_KEY column should exist in the mapping table already.
+      c_id = result_map.getColumnValue("PRIMARY_KEY");
       c_location_name = result_map.getColumnValue("LOCATION_NAME");
       c_street_address = result_map.getColumnValue("STREET_ADDRESS");
       c_city = result_map.getColumnValue("CITY");
@@ -38,7 +39,7 @@ AS $$
       //Querying the API.
       
       var cmd_outputCreation = `CREATE OR REPLACE TABLE ${TBL_OUTPUT} AS(
-                                SELECT A.*, B.RESULT[0] AS PLACEKEY_ID, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY
+                                SELECT A.*, B.RESULT[0] AS PLACEKEY_ID, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY_RESULT
                                 FROM(
                                   SELECT ${API_FUNCTION}(joined.*) AS result
                                   FROM (
@@ -50,7 +51,7 @@ AS $$
                                   ) AS joined
                                 ) AS B
                                 INNER JOIN ${TBL_INPUT} AS A
-                                ON A.RECID = B.RESULT[0]
+                                ON A.${c_id} = B.RESULT[0]
                               )`;
        var stmt_outputCreation = snowflake.createStatement( {sqlText: cmd_outputCreation} );
        var result_outputCreation = stmt_outputCreation.execute();

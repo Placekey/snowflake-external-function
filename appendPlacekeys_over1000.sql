@@ -1,7 +1,3 @@
---This Stored procedure will allow you to append over 1000 placekeys to a file. 
---The input file MUST have a NUMERIC <RECORD ID> Column starting at 0 and finishing at maxRecords - 1.
---Example: If your file contains 10000 records, your <RECORD ID> column must start at 0 and end at 9999.
-
 CREATE OR REPLACE PROCEDURE APPEND_PLACEKEYS_ALT(
   TBL_QUERY VARCHAR(100), --Input table
   TBL_MAPPING VARCHAR(100), 
@@ -15,7 +11,7 @@ CREATE OR REPLACE PROCEDURE APPEND_PLACEKEYS_ALT(
   COL_RECID VARCHAR(100), --This is the COLUMN NAME for the column that acts as <RECORD ID> in your INPUT TABLE. 
   API_FUNCTION VARCHAR(100), --The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
   BATCH_SIZE FLOAT --Size of the batch per operation. Can't be greater than 1000.
-  
+
 )
 RETURNS VARCHAR
 LANGUAGE JAVASCRIPT
@@ -26,6 +22,7 @@ AS $$
       // Validate that the RECID column starts with 0
 
       var cmd_validateRecId = `SELECT CAST(${COL_RECID} as FLOAT) as RECID FROM ${TBL_QUERY} LIMIT 1`;
+
       var stmt_validateRecId = snowflake.createStatement( {sqlText: cmd_validateRecId});
       var result_validateRecId = stmt_validateRecId.execute();
       result_validateRecId.next();
@@ -82,28 +79,31 @@ AS $$
               LIMIT ${BATCH_SIZE}
               OFFSET ${BATCH_SIZE * i} ) AS a;
         `;
+
         var statementLoop = snowflake.createStatement( {sqlText: cmd_api} );
         var result_setLoop = statementLoop.execute();
         result_setLoop.next();
       }
 
       var cmd_join = `CREATE OR REPLACE TABLE ${TBL_OUT} AS (
-        SELECT p.*, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY, B.RESULT[2] AS error
+        SELECT p.*, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY_RESULT, B.RESULT[2] AS error
         FROM ${TBL_QUERY} p
         INNER JOIN ${TBL_TEMP} B
         ON p.${COL_RECID} = B.RESULT[0]
-        ORDER BY {COL_RECID} ASC
+        ORDER BY ${COL_RECID} ASC
       )`;
+
       var stmt_join = snowflake.createStatement( {sqlText: cmd_join} );
       var result_join = stmt_join.execute();
-      
+
       var cmd_cleanPlacekeys = `UPDATE ${TBL_OUT} SET PLACEKEY = REPLACE(PLACEKEY,'"', '')`;
       var stmt_cleanPlacekeys = snowflake.createStatement( {sqlText: cmd_cleanPlacekeys} );
       var result_cleanPlacekeys = stmt_cleanPlacekeys.execute();
 
       return `Done! Data stored in table: ${TBL_OUT}`;
-    
+
     } catch (err) {
         return `ERROR: ${err} - ${err.stackTraceTxt}`
     }
 $$
+;
