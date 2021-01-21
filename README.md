@@ -104,7 +104,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
 ### Using the External Function Within a Procedure
     
-- To query Placekeys for more than 1,000 rows,  use a precedure. Create a table to map the column names in your table to the Placekey API fields:
+- To query Placekeys for more than 1,000 rows,  use a procedure. Create a table to map the column names in your table to the Placekey API fields:
     
     ```
     CREATE OR REPLACE TABLE test_lookup (
