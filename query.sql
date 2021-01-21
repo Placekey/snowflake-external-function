@@ -94,7 +94,7 @@ FROM (
 /**
 Using the External Function Within a Procedure
 
-To query Placekeys for more than 1,000 rows, use a precedure. 
+To query Placekeys for more than 1,000 rows, use a procedure. 
 Create a table to map the column names in your table to the Placekey API fields:
 **/
 
