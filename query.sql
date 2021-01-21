@@ -14,7 +14,7 @@ Sign in with an ACCOUNTADMIN role to your Snowflake instance. Alternatively, sig
 // Create the API Integration.
 
 USE ROLE ACCOUNTADMIN;
-USE DEMO_DB;
+USE <PASTE_YOUR_DB_HERE>;
 
 
 CREATE OR REPLACE API INTEGRATION placekey_api_integration
@@ -99,20 +99,22 @@ Create a table to map the column names in your table to the Placekey API fields:
 **/
 
 CREATE OR REPLACE TABLE test_lookup (
-    STREET_ADDRESS VARCHAR(16777216),
-    CITY VARCHAR(16777216),
-    REGION VARCHAR(16777216),
-    POSTAL_CODE VARCHAR(16777216),
-    LOCATION_NAME VARCHAR(16777216),
-    LATITUDE VARCHAR(16777216),
-    LONGITUDE VARCHAR(16777216),
-    ISO_COUNTRY_CODE VARCHAR(16777216)
+  PRIMARY_KEY VARCHAR(100),
+  STREET_ADDRESS VARCHAR(100),
+  CITY VARCHAR(100),
+  REGION VARCHAR(100),
+  POSTAL_CODE VARCHAR(100),
+  LOCATION_NAME VARCHAR(100),
+  LATITUDE VARCHAR(100),
+  LONGITUDE VARCHAR(100),
+  ISO_COUNTRY_CODE VARCHAR(100)
 );
 
 
 insert into test_lookup
-    values
-    ('STREETADDRESS', 'CITY', 'STATE', 'ZIPCODE', 'NAME', 'LATITUDE', 'LONGITUDE', 'COUNTRY');
+  values
+  ('ID', 'STREETADDRESS', 'CITY', 'STATE', 'ZIPCODE', 'NAME', 'LATITUDE', 'LONGITUDE', 'COUNTRY')
+;
 
 
 // Use the following procedure to perform bulk queries.
@@ -127,7 +129,6 @@ CREATE OR REPLACE PROCEDURE APPEND_PLACEKEYS(
   
   TBL_OUT VARCHAR(100), --This is the name of your OUTPUT table.
   TBL_TEMP VARCHAR(100), --This is a TEMP table used to query the API and get the placekeys.
-  COL_RECID VARCHAR(100), --This is the COLUMN NAME for the column that acts as <RECORD ID> in your INPUT TABLE. 
   API_FUNCTION VARCHAR(100), --The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
   BATCH_SIZE FLOAT --Size of the batch per operation. Can't be greater than 1000.
 
@@ -137,25 +138,13 @@ LANGUAGE JAVASCRIPT
 AS $$
 
     try{
-      // The RECID table must go from 0 to maxRecords - 1 for the JOIN operation to be successful.
-      // Validate that the RECID column starts with 0
-
-      var cmd_validateRecId = `SELECT CAST(${COL_RECID} as FLOAT) as RECID FROM ${TBL_QUERY} LIMIT 1`;
-
-      var stmt_validateRecId = snowflake.createStatement( {sqlText: cmd_validateRecId});
-      var result_validateRecId = stmt_validateRecId.execute();
-      result_validateRecId.next();
-      var firstKey = result_validateRecId.getColumnValue("RECID");
-
-      if(firstKey != 0) {throw "The Record Id from the Input table must start with 0 and end with maxRecords - 1";}
-
-
       // Column mapping
 
       var cmd_map = `SELECT * FROM ${TBL_MAPPING};`
       var stmt_map = snowflake.createStatement( {sqlText: cmd_map} );
       var result_map = stmt_map.execute();
       result_map.next();
+      c_primary_key = result_map.getColumnValue("PRIMARY_KEY");
       c_location_name = result_map.getColumnValue("LOCATION_NAME");
       c_street_address = result_map.getColumnValue("STREET_ADDRESS");
       c_city = result_map.getColumnValue("CITY");
@@ -164,6 +153,19 @@ AS $$
       c_latitude = result_map.getColumnValue("LATITUDE");
       c_longitude = result_map.getColumnValue("LONGITUDE");
       c_country_code = result_map.getColumnValue("ISO_COUNTRY_CODE");
+
+
+      // The RECID table must go from 0 to maxRecords - 1 for the JOIN operation to be successful.
+      // Validate that the RECID column starts with 0
+
+      var cmd_validateRecId = `SELECT CAST(${c_primary_key} as FLOAT) as RECID FROM ${TBL_QUERY} LIMIT 1`;
+
+      var stmt_validateRecId = snowflake.createStatement( {sqlText: cmd_validateRecId});
+      var result_validateRecId = stmt_validateRecId.execute();
+      result_validateRecId.next();
+      var firstKey = result_validateRecId.getColumnValue("RECID");
+
+      if(firstKey != 0) {throw "The Record Id from the Input table must start with 0 and end with maxRecords - 1";}
 
       // Create a temporary table to store the results of the query
 
@@ -185,7 +187,7 @@ AS $$
         var cmd_api = `
           INSERT INTO ${TBL_TEMP}(RESULT)
             SELECT ${API_FUNCTION}(a.*) AS RESULT FROM (
-              SELECT ${COL_RECID}, 
+              SELECT ${c_primary_key}, 
               ${c_location_name}, 
               ${c_street_address}, 
               ${c_city}, 
@@ -208,8 +210,8 @@ AS $$
         SELECT p.*, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY, B.RESULT[2] AS error
         FROM ${TBL_QUERY} p
         INNER JOIN ${TBL_TEMP} B
-        ON p.${COL_RECID} = B.RESULT[0]
-        ORDER BY ${COL_RECID} ASC
+        ON p.${c_primary_key} = B.RESULT[0]
+        ORDER BY ${c_primary_key} ASC
       )`;
 
       var stmt_join = snowflake.createStatement( {sqlText: cmd_join} );
@@ -230,7 +232,7 @@ $$
 
 // Call the procedure.
 
-CALL APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'id', 'get_placekeys', 2);
+CALL APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 2);
 
 
 // Check the results.
