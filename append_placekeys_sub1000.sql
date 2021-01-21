@@ -39,7 +39,7 @@ AS $$
       //Querying the API.
       
       var cmd_outputCreation = `CREATE OR REPLACE TABLE ${TBL_OUTPUT} AS(
-                                SELECT A.*, B.RESULT[0] AS PLACEKEY_ID, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY_RESULT
+                                SELECT A.*, B.RESULT[0] AS PLACEKEY_ID, CAST(B.RESULT[1] AS VARCHAR(100)) AS PLACEKEY
                                 FROM(
                                   SELECT ${API_FUNCTION}(joined.*) AS result
                                   FROM (
