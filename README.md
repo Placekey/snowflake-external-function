@@ -31,15 +31,8 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
     ```
     CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
-      id number, 
-      name varchar, 
-      street_address varchar, 
-      city varchar, 
-      state varchar, 
-      postal_code varchar, 
-      latitude varchar, 
-      longitude varchar, 
-      country varchar
+      mapping variant,
+      input variant
     )
       RETURNS variant
       API_INTEGRATION = placekey_api_integration
@@ -199,7 +192,11 @@ The Snowflake External Function allows you to append Placekeys to your address a
           for (var i = 0; i < num_batches; i++) {
             var cmd_api = `
               INSERT INTO ${TBL_TEMP}(RESULT)
-                SELECT ${API_FUNCTION}(a.*) AS RESULT FROM (
+                SELECT ${API_FUNCTION}(
+                    (SELECT object_construct(*) FROM test_lookup),
+                    object_construct(a.*)
+                  ) AS RESULT
+                FROM (
                   SELECT ${c_primary_key}, 
                   ${c_location_name}, 
                   ${c_street_address}, 
@@ -278,15 +275,8 @@ CREATE OR REPLACE API INTEGRATION placekey_api_integration
 
 
 CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
-  id number, 
-  name varchar, 
-  street_address varchar, 
-  city varchar, 
-  state varchar, 
-  postal_code varchar, 
-  latitude varchar, 
-  longitude varchar, 
-  country varchar
+  mapping variant,
+  input variant
 )
   RETURNS variant
   API_INTEGRATION = placekey_api_integration
@@ -405,7 +395,11 @@ AS $$
       for (var i = 0; i < num_batches; i++) {
         var cmd_api = `
           INSERT INTO ${TBL_TEMP}(RESULT)
-            SELECT ${API_FUNCTION}(a.*) AS RESULT FROM (
+            SELECT ${API_FUNCTION}(
+                (SELECT object_construct(*) FROM test_lookup),
+                object_construct(a.*)
+              ) AS RESULT
+            FROM (
               SELECT ${c_primary_key}, 
               ${c_location_name}, 
               ${c_street_address}, 

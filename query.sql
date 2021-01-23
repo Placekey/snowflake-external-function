@@ -28,15 +28,8 @@ CREATE OR REPLACE API INTEGRATION placekey_api_integration
 // Create the External function.
 
 CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
-  id number, 
-  location_name varchar, 
-  street_address varchar, 
-  city varchar, 
-  region varchar, 
-  postal_code varchar, 
-  latitude varchar, 
-  longitude varchar, 
-  iso_country_code varchar
+  mapping variant,
+  input variant
 )
   RETURNS variant
   API_INTEGRATION = placekey_api_integration
@@ -75,7 +68,9 @@ INSERT INTO test_addresses
 
 // Get Placekeys for the data in test_addresses directly.
 
-SELECT get_placekeys(joined.*) AS result
+SELECT get_placekeys(
+  (SELECT object_construct(*) FROM test_lookup), object_construct(joined.*)
+) AS RESULT
 FROM (
   SELECT ID, NAME, STREETADDRESS, CITY, STATE, ZIPCODE, LATITUDE, LONGITUDE, COUNTRY
   FROM test_addresses
@@ -85,7 +80,8 @@ FROM (
 // Get Placekeys for the data in test_addresses, but only query (id, street_address, city, and region). 
 // Note that a null iso_country_code defaults to 'US'.
 
-SELECT get_placekeys(joined.*) AS result
+SELECT get_placekeys(
+  (SELECT object_construct(*) FROM test_lookup), object_construct(joined.*))
 FROM (
   SELECT ID, null AS missing_name, STREETADDRESS, CITY, STATE, null AS missing_zip, null AS no_lat, null AS no_lon, null AS defaults_to_us
   FROM test_addresses
@@ -186,7 +182,11 @@ AS $$
       for (var i = 0; i < num_batches; i++) {
         var cmd_api = `
           INSERT INTO ${TBL_TEMP}(RESULT)
-            SELECT ${API_FUNCTION}(a.*) AS RESULT FROM (
+            SELECT ${API_FUNCTION}(
+                (SELECT object_construct(*) FROM test_lookup),
+                object_construct(a.*)
+              ) AS RESULT
+            FROM (
               SELECT ${c_primary_key}, 
               ${c_location_name}, 
               ${c_street_address}, 
