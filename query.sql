@@ -59,57 +59,56 @@ CREATE OR REPLACE TABLE test_addresses (
 
 INSERT INTO test_addresses
     VALUES 
-    ('0', 'Twin Peaks Petroleum', '598 Portola Dr', 'San Francisco', 'CA', '94131', '37.7371', '-122.44283', 'US', 'other_value_1'),
+    ('5', 'Twin Peaks Petroleum', '598 Portola Dr', 'San Francisco', 'CA', '94131', '37.7371', '-122.44283', 'US', 'other_value_1'),
     ('1', null, null, null, null, null, '37.7371', '-122.44283', 'US', 'other_value_2'),
-    ('2', 'Beretta', '1199 Valencia St', 'San Francisco', 'CA', '94110', null, null, 'US', 'other_value_3'),
+    ('8', 'Beretta', '1199 Valencia St', 'San Francisco', 'CA', '94110', null, null, 'US', 'other_value_3'),
     ('3', 'Tasty Hand Pulled Noodle', '1 Doyers St', 'New York', 'ny', '10013', null, null, 'US', 'other_value_4'),
-    ('4', null, '1 Doyers St', 'New York', 'NY', '10013', null, null, null, null);
+    ('7', null, '1 Doyers St', 'New York', 'NY', '10013', null, null, null, null);
 
 
 // Get Placekeys for the data in test_addresses directly.
 
-SELECT get_placekeys(
-  (SELECT object_construct(*) FROM test_lookup), object_construct(joined.*)
-) AS RESULT
+SELECT
+  CAST(API_RESULT[0] AS INTEGER) AS ID,
+  CAST(API_RESULT[1] AS VARCHAR) AS PLACEKEY,
+  CAST(API_RESULT[2] AS VARCHAR) AS ERROR
 FROM (
-  SELECT ID, NAME, STREETADDRESS, CITY, STATE, ZIPCODE, LATITUDE, LONGITUDE, COUNTRY
-  FROM test_addresses
-) AS joined;
+  SELECT get_placekeys(object_construct(joined.*)) AS API_RESULT
+  FROM (
+    SELECT
+      ID as PRIMARY_KEY,
+      NAME as LOCATION_NAME,
+      STREETADDRESS as STREET_ADDRESS,
+      CITY,
+      STATE AS REGION,
+      ZIPCODE AS POSTAL_CODE,
+      LATITUDE, LONGITUDE,
+      COUNTRY AS ISO_COUNTRY_CODE
+    FROM test_addresses
+  ) AS joined
+) AS RESULT
+ORDER BY ID;
 
 
 // Get Placekeys for the data in test_addresses, but only query (id, street_address, city, and region). 
 // Note that a null iso_country_code defaults to 'US'.
 
-SELECT get_placekeys(
-  (SELECT object_construct(*) FROM test_lookup), object_construct(joined.*))
+SELECT
+  CAST(API_RESULT[0] AS INTEGER) AS ID,
+  CAST(API_RESULT[1] AS VARCHAR) AS PLACEKEY,
+  CAST(API_RESULT[2] AS VARCHAR) AS ERROR
 FROM (
-  SELECT ID, null AS missing_name, STREETADDRESS, CITY, STATE, null AS missing_zip, null AS no_lat, null AS no_lon, null AS defaults_to_us
-  FROM test_addresses
-) AS joined;
-
-/**
-Using the External Function Within a Procedure
-
-To query Placekeys for more than 1,000 rows, use a procedure. 
-Create a table to map the column names in your table to the Placekey API fields:
-**/
-
-CREATE OR REPLACE TABLE test_lookup (
-  PRIMARY_KEY VARCHAR(100),
-  STREET_ADDRESS VARCHAR(100),
-  CITY VARCHAR(100),
-  REGION VARCHAR(100),
-  POSTAL_CODE VARCHAR(100),
-  LOCATION_NAME VARCHAR(100),
-  LATITUDE VARCHAR(100),
-  LONGITUDE VARCHAR(100),
-  ISO_COUNTRY_CODE VARCHAR(100)
-);
-
-
-insert into test_lookup
-  values
-  ('ID', 'STREETADDRESS', 'CITY', 'STATE', 'ZIPCODE', 'NAME', 'LATITUDE', 'LONGITUDE', 'COUNTRY')
+  SELECT get_placekeys(object_construct(joined.*)) AS API_RESULT
+  FROM (
+    SELECT
+      ID AS PRIMARY_KEY,
+      STREETADDRESS AS STREET_ADDRESS,
+      CITY,
+      STATE AS REGION
+    FROM test_addresses
+  ) AS joined
+) AS RESULT
+ORDER BY ID
 ;
 
 
@@ -117,51 +116,26 @@ insert into test_lookup
 
 CREATE OR REPLACE PROCEDURE APPEND_PLACEKEYS(
   TBL_QUERY VARCHAR(100), --Input table
-  TBL_MAPPING VARCHAR(100), --Column mapping table
-  
-  --The mapping table allows you to create a mapping between your input table and the column names expected by the Placekey API.
-  --For the mapping, the COLUMN NAMES correspond to the PLACEKEY COLUMN NAMES, and the values of ROW 1 correspond to your input table's column names.
-  --You may indicate any of the columns as NULL if you don't have them in your table
-  
   TBL_OUT VARCHAR(100), --This is the name of your OUTPUT table.
   TBL_TEMP VARCHAR(100), --This is a TEMP table used to query the API and get the placekeys.
   API_FUNCTION VARCHAR(100), --The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
   BATCH_SIZE FLOAT --Size of the batch per operation. Can't be greater than 1000.
-
 )
 RETURNS VARCHAR
 LANGUAGE JAVASCRIPT
 AS $$
 
     try{
-      // Column mapping
-
-      var cmd_map = `SELECT * FROM ${TBL_MAPPING};`
-      var stmt_map = snowflake.createStatement( {sqlText: cmd_map} );
-      var result_map = stmt_map.execute();
-      result_map.next();
-      c_primary_key = result_map.getColumnValue("PRIMARY_KEY");
-      c_location_name = result_map.getColumnValue("LOCATION_NAME");
-      c_street_address = result_map.getColumnValue("STREET_ADDRESS");
-      c_city = result_map.getColumnValue("CITY");
-      c_region = result_map.getColumnValue("REGION");
-      c_postal_code = result_map.getColumnValue("POSTAL_CODE");
-      c_latitude = result_map.getColumnValue("LATITUDE");
-      c_longitude = result_map.getColumnValue("LONGITUDE");
-      c_country_code = result_map.getColumnValue("ISO_COUNTRY_CODE");
-
-
-      // The RECID table must go from 0 to maxRecords - 1 for the JOIN operation to be successful.
-      // Validate that the RECID column starts with 0
-
-      var cmd_validateRecId = `SELECT CAST(${c_primary_key} as FLOAT) as RECID FROM ${TBL_QUERY} LIMIT 1`;
-
-      var stmt_validateRecId = snowflake.createStatement( {sqlText: cmd_validateRecId});
-      var result_validateRecId = stmt_validateRecId.execute();
-      result_validateRecId.next();
-      var firstKey = result_validateRecId.getColumnValue("RECID");
-
-      if(firstKey != 0) {throw "The Record Id from the Input table must start with 0 and end with maxRecords - 1";}
+      // Column mapping SELECT * FROM TEST_ADDRESSES;
+      c_primary_key = "ID";
+      c_location_name = null;
+      c_street_address = "STREETADDRESS";
+      c_city = null; //"CITY";
+      c_region = null; //"STATE";
+      c_postal_code = "ZIPCODE";
+      c_latitude = "LATITUDE";
+      c_longitude = "LONGITUDE";
+      c_country_code = null; //"COUNTRY";
 
       // Create a temporary table to store the results of the query
 
@@ -183,19 +157,19 @@ AS $$
         var cmd_api = `
           INSERT INTO ${TBL_TEMP}(RESULT)
             SELECT ${API_FUNCTION}(
-                (SELECT object_construct(*) FROM test_lookup),
                 object_construct(a.*)
               ) AS RESULT
             FROM (
-              SELECT ${c_primary_key}, 
-              ${c_location_name}, 
-              ${c_street_address}, 
-              ${c_city}, 
-              ${c_region}, 
-              ${c_postal_code}, 
-              ${c_latitude},
-              ${c_longitude}, 
-              ${c_country_code} 
+              SELECT
+                ${c_primary_key} AS PRIMARY_KEY, 
+                ${c_location_name} AS LOCATION_NAME, 
+                ${c_street_address} AS STREET_ADDRESS, 
+                ${c_city} AS CITY, 
+                ${c_region} AS REGION, 
+                ${c_postal_code} AS POSTAL_CODE, 
+                ${c_latitude} AS LATITUDE,
+                ${c_longitude} AS LONGITUDE, 
+                ${c_country_code} AS ISO_COUNTRY_CODE 
               FROM ${TBL_QUERY} 
               LIMIT ${BATCH_SIZE}
               OFFSET ${BATCH_SIZE * i} ) AS a;
@@ -232,7 +206,7 @@ $$
 
 // Call the procedure.
 
-CALL APPEND_PLACEKEYS('test_addresses', 'test_lookup', 'payload', 'temp', 'get_placekeys', 2);
+CALL APPEND_PLACEKEYS('test_addresses', 'payload', 'temp', 'get_placekeys', 2);
 
 
 // Check the results.
