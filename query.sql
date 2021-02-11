@@ -28,7 +28,6 @@ CREATE OR REPLACE API INTEGRATION placekey_api_integration
 // Create the External function.
 
 CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
-  mapping variant,
   input variant
 )
   RETURNS variant

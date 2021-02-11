@@ -31,7 +31,6 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
     ```
     CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
-      mapping variant,
       input variant
     )
       RETURNS variant
@@ -138,7 +137,6 @@ The Snowflake External Function allows you to append Placekeys to your address a
     AS $$
 
         try{
-          // Column mapping SELECT * FROM TEST_ADDRESSES;
           c_primary_key = "ID";
           c_location_name = null;
           c_street_address = "STREETADDRESS";
@@ -218,7 +216,6 @@ The Snowflake External Function allows you to append Placekeys to your address a
     
     The procedure takes the following input variables: 
     - `TBL_QUERY`: the name of the table in which your address/POI data is stored
-    - `TBL_MAPPING`: the name of the column mapping table defined earlier
     - `TBL_OUT`: the name of the table to store the results 
     - `TBL_TEMP`: the name of the temporary table used in the procedure
     - `API_FUNCTION`: the name of the External Function defined earlier
@@ -251,7 +248,6 @@ CREATE OR REPLACE API INTEGRATION placekey_api_integration
 
 
 CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
-  mapping variant,
   input variant
 )
   RETURNS variant
@@ -297,7 +293,6 @@ LANGUAGE JAVASCRIPT
 AS $$
 
     try{
-      // Column mapping SELECT * FROM TEST_ADDRESSES;
       c_primary_key = "ID";
       c_location_name = null;
       c_street_address = "STREETADDRESS";
