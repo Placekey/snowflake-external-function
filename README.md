@@ -180,7 +180,8 @@ The Snowflake External Function allows you to append Placekeys to your address a
                     ${c_latitude} AS LATITUDE,
                     ${c_longitude} AS LONGITUDE, 
                     ${c_country_code} AS ISO_COUNTRY_CODE 
-                  FROM ${TBL_QUERY} 
+                  FROM ${TBL_QUERY}
+                  ORDER BY PRIMARY_KEY
                   LIMIT ${BATCH_SIZE}
                   OFFSET ${BATCH_SIZE * i} ) AS a;
             `;
@@ -336,7 +337,8 @@ AS $$
                 ${c_latitude} AS LATITUDE,
                 ${c_longitude} AS LONGITUDE, 
                 ${c_country_code} AS ISO_COUNTRY_CODE 
-              FROM ${TBL_QUERY} 
+              FROM ${TBL_QUERY}
+              ORDER BY PRIMARY_KEY
               LIMIT ${BATCH_SIZE}
               OFFSET ${BATCH_SIZE * i} ) AS a;
         `;
