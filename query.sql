@@ -78,10 +78,11 @@ FROM (
       ID as PRIMARY_KEY,
       NAME as LOCATION_NAME,
       STREETADDRESS as STREET_ADDRESS,
-      CITY,
+      CITY AS CITY,
       STATE AS REGION,
       ZIPCODE AS POSTAL_CODE,
-      LATITUDE, LONGITUDE,
+      LATITUDE AS LATITUDE,
+      LONGITUDE AS LONGITUDE,
       COUNTRY AS ISO_COUNTRY_CODE
     FROM test_addresses
   ) AS joined
@@ -114,27 +115,27 @@ ORDER BY ID
 // Use the following procedure to perform bulk queries.
 
 CREATE OR REPLACE PROCEDURE APPEND_PLACEKEYS(
-  TBL_QUERY VARCHAR(100), --Input table
-  TBL_OUT VARCHAR(100), --This is the name of your OUTPUT table.
-  TBL_TEMP VARCHAR(100), --This is a TEMP table used to query the API and get the placekeys.
-  API_FUNCTION VARCHAR(100), --The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
-  BATCH_SIZE FLOAT --Size of the batch per operation. Can't be greater than 1000.
+  TBL_QUERY VARCHAR(100),   --Input table
+  MAPPING VARIANT,          --Mapping variant
+  TBL_OUT VARCHAR(100),     --This is the name of your OUTPUT table.
+  TBL_TEMP VARCHAR(100),    --This is a TEMP table used to query the API and get the placekeys.
+  API_FUNCTION VARCHAR(100),--The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
+  BATCH_SIZE FLOAT          --Size of the batch per operation. Can't be greater than 1000.
 )
 RETURNS VARCHAR
 LANGUAGE JAVASCRIPT
 AS $$
 
     try{
-      // Column mapping SELECT * FROM TEST_ADDRESSES;
-      c_primary_key = "ID";
-      c_location_name = null;
-      c_street_address = "STREETADDRESS";
-      c_city = null; //"CITY";
-      c_region = null; //"STATE";
-      c_postal_code = "ZIPCODE";
-      c_latitude = "LATITUDE";
-      c_longitude = "LONGITUDE";
-      c_country_code = null; //"COUNTRY";
+      c_primary_key = MAPPING["PRIMARY_KEY"];
+      c_location_name = MAPPING["LOCATION_NAME"] || "NULL";
+      c_street_address = MAPPING["STREET_ADDRESS"] || "NULL";
+      c_city = MAPPING["CITY"] || "NULL";
+      c_region = MAPPING["REGION"] || "NULL";
+      c_postal_code = MAPPING["POSTAL_CODE"] || "NULL";
+      c_latitude = MAPPING["LATITUDE"] || "NULL";
+      c_longitude = MAPPING["LONGITUDE"] || "NULL";
+      c_country_code = MAPPING["COUNTRY_CODE"] || "NULL";
 
       // Create a temporary table to store the results of the query
 
@@ -149,7 +150,8 @@ AS $$
       var stmt_count = snowflake.createStatement( {sqlText: cmd_count} );
       var result_count = stmt_count.execute();
       result_count.next()
-      var num_rows = result_count.getColumnValue(1)
+
+      var num_rows = result_count.getColumnValue(1);
       var num_batches = Math.ceil(num_rows / BATCH_SIZE)
 
       for (var i = 0; i < num_batches; i++) {
@@ -205,8 +207,23 @@ $$
 
 
 // Call the procedure.
-
-CALL APPEND_PLACEKEYS('test_addresses', 'payload', 'temp', 'get_placekeys', 2);
+CALL APPEND_PLACEKEYS(
+  'test_addresses',
+  (
+    SELECT object_construct(MAPPING.*)
+    FROM (
+      SELECT
+        'ID' as PRIMARY_KEY,
+        'STREETADDRESS' as STREET_ADDRESS,
+        'CITY' as CITY,
+        'STATE' as REGION,
+        'ZIPCODE' as POSTAL_CODE,
+        'LATITUDE' as LATITUDE,
+        'LONGITUDE' as LONGITUDE
+    ) AS MAPPING
+  ),
+  'payload', 'temp', 'get_placekeys', 2
+);
 
 
 // Check the results.
