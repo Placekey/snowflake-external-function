@@ -77,7 +77,7 @@ create or replace external function get_placekeys_variant(
   returns variant
   api_integration = placekey_api_integration
   headers = ('api-key' = 'lxsFTUkHSyT8mcQ4g4hn2UuoJqqSQJrH')
-  max_batch_rows = 1000
+  max_batch_rows = 100
   as 'https://lbdl9njufi.execute-api.us-east-1.amazonaws.com/api/placekeys'
 ;
 
