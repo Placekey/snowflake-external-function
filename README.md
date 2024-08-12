@@ -36,7 +36,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
       RETURNS variant
       API_INTEGRATION = placekey_api_integration
       HEADERS = ('api-key' = '<PASTE_YOUR_KEY_HERE>')
-      MAX_BATCH_ROWS = 1000
+      MAX_BATCH_ROWS = 100
       AS 'https://lbdl9njufi.execute-api.us-east-1.amazonaws.com/api/placekeys'
     ;
     ```
@@ -98,7 +98,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
     Note that the above requires the following:
     - The table needs to have a unique column `id` which is passed as the first argument to the external function. The function returns the id which was originally passed to it along with the Placekeys, so the result can be joined back to the original table. The `id` field cannot be `null`.
     - The order of the fields in the `SELECT` statement should exactly match that of the external function definition: `(id, location_name, street_address, city, region, postal_code, latitude, longitude, country)`.
-    - There are at most 1,000 rows in the table to which you want to append Placekeys. To perform queries for >1000 Placekeys, see the procedure below.
+    - There are at most 1,000 rows in the table to which you want to append Placekeys. To perform queries for >100 Placekeys, see the procedure below.
 
     The function can be used as follows to query only a limited number of fields. For example, if test_addresses only had the fields `STREETADDRESS`, `CITY`, and `STATE`, the function could be called as follows:
     
@@ -132,7 +132,7 @@ The Snowflake External Function allows you to append Placekeys to your address a
       TBL_OUT VARCHAR(100),     --This is the name of your OUTPUT table.
       TBL_TEMP VARCHAR(100),    --This is a TEMP table used to query the API and get the placekeys.
       API_FUNCTION VARCHAR(100),--The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
-      BATCH_SIZE FLOAT          --Size of the batch per operation. Can't be greater than 1000.
+      BATCH_SIZE FLOAT          --Size of the batch per operation. Can't be greater than 100.
     )
     RETURNS VARCHAR
     LANGUAGE JAVASCRIPT
@@ -293,7 +293,7 @@ CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
   RETURNS variant
   API_INTEGRATION = placekey_api_integration
   HEADERS = ('api-key' = '<PASTE_YOUR_KEY_HERE>')
-  MAX_BATCH_ROWS = 1000
+  MAX_BATCH_ROWS = 100
   AS 'https://lbdl9njufi.execute-api.us-east-1.amazonaws.com/api/placekeys'
 ;
 

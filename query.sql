@@ -33,7 +33,7 @@ CREATE OR REPLACE EXTERNAL FUNCTION get_placekeys(
   RETURNS variant
   API_INTEGRATION = placekey_api_integration
   HEADERS = ('api-key' = '<PASTE_YOUR_KEY_HERE>')
-  MAX_BATCH_ROWS = 1000
+  MAX_BATCH_ROWS = 100
   AS 'https://lbdl9njufi.execute-api.us-east-1.amazonaws.com/api/placekeys'
 ;
 
@@ -120,7 +120,7 @@ CREATE OR REPLACE PROCEDURE APPEND_PLACEKEYS(
   TBL_OUT VARCHAR(100),     --This is the name of your OUTPUT table.
   TBL_TEMP VARCHAR(100),    --This is a TEMP table used to query the API and get the placekeys.
   API_FUNCTION VARCHAR(100),--The function to call. For this example, the function was named get_placekeys. Include only the name, not parentheses.
-  BATCH_SIZE FLOAT          --Size of the batch per operation. Can't be greater than 1000.
+  BATCH_SIZE FLOAT          --Size of the batch per operation. Can't be greater than 100.
 )
 RETURNS VARCHAR
 LANGUAGE JAVASCRIPT
